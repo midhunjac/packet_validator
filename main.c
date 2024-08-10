@@ -35,6 +35,7 @@ int validate_packet(char* packet)
 
     //Calculate wrapper checksum on our end to compare it with the actual wrapper checksum
     
+    //calculate wrapper checksum accroding to PRM section 1.1.1
     int wrapper_checksum_expected = ((int)type + (int)subtype) %256; // refer to protocol referenece manual section 1.1.1
     char wrapper_checksum_hex_expected[3]; // 2 char wrapper checksum + null termination
     snprintf(wrapper_checksum_hex_expected,3,"%02X",wrapper_checksum_expected);
@@ -58,18 +59,18 @@ int validate_packet(char* packet)
     }
 
     //In case there is data, validate each chunk
-    int chunk_sum = 0;
-    for(int i=2;i<length-2-CHUNK_CHECKSUM_SIZE;i++)
+    int chunk_char_sum = 0;
+    for(int i=2; i < length - 2 - CHUNK_CHECKSUM_SIZE; i++)
     {
         if(!isprint(packet[i])) //checking validity of each character
         {
-            printf("Invalid packet: Non-printable ASCII chracter in chunk data.\n");
+            printf("Invalid packet: Non-printable ASCII character in chunk data.\n");
             return 0;
         }
-        chunk_sum += (int)packet[i];
+        chunk_char_sum += (int)packet[i]; //sum of all characters in the chunk accroding to PRM section 1.2
     }
 
-    int chunk_checksum_expected = chunk_sum %256;
+    int chunk_checksum_expected = chunk_char_sum %256; // Refer to PRM 1.2
     char chunk_checksum_hex_expected[3]; //2 character hex checksum + null termination
     snprintf(chunk_checksum_hex_expected,3,"%02X",chunk_checksum_expected);
 
