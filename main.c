@@ -3,10 +3,14 @@
 #include <ctype.h>
 
 #define MIN_PACKET_LENGTH 4 //minimum packet length (type + subtype + wrapper checksum)
+#define CHUNK_DATA_SIZE 32  //the chunk of data can have a maximum of 32 characters. Refer to protocol referenc manual section 1.2
+#define CHUNK_CHECKSUM_SIZE 2 // the chunk checksum size is 2 character size. refer to protocol reference manual section 1.2
+
 
 int validate_packet(char* packet)
 {
     int length = strlen(packet);
+
     if(length < MIN_PACKET_LENGTH)
     {
         printf("Invalid packet: Packet is too short.\n");
@@ -44,6 +48,39 @@ int validate_packet(char* packet)
         printf("Invalid packet: Wrapper checksum does not match.\n");
         return 0;
     }
+
+    //Check and validate data
+
+    if(length == MIN_PACKET_LENGTH) //if total length is 4, there is no data
+    {
+        printf("Valid packet: No data\n");
+        return 1;
+    }
+
+    //In case there is data, validate each chunk
+    int chunk_sum = 0;
+    for(int i=2;i<length-2-CHUNK_CHECKSUM_SIZE;i++)
+    {
+        if(!isprint(packet[i])) //checking validity of each character
+        {
+            printf("Invalid packet: Non-printable ASCII chracter in chunk data.\n");
+            return 0;
+        }
+        chunk_sum += (int)packet[i];
+    }
+
+    int chunk_checksum_expected = chunk_sum %256;
+    char chunk_checksum_hex_expected[3]; //2 character hex checksum + null termination
+    snprintf(chunk_checksum_hex_expected,3,"%02X",chunk_checksum_expected);
+
+    //Extract the actual chunk checksum according to PRM section 1.2 for single chunk packet
+    char chunk_checksum_actual[3] = {packet[length-4],packet[length-3],'\0'};
+
+    if(strcmp(chunk_checksum_hex_expected,chunk_checksum_actual) !=0 )
+    {
+        printf("Invalid packet: Chunk checksum does not match.\n");
+        return 0;
+    } 
 
     //If every condition is met, this is a valid packet
     printf("Valid packet.\n");
