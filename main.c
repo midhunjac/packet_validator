@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include "packets.h"
 
 #define MIN_PACKET_LENGTH 4 //minimum packet length (type + subtype + wrapper checksum)
 #define PACKET_TYPE_POS 0 //the packet type is found at this index. refer protocol reference manual section 1.1
@@ -106,11 +107,19 @@ int validate_packet(char* packet)
 
 int main(int argc, char* argv[]) // command line argument fed input to help in quick testing
 {
-    if(argc != 2)
+
+    if(argc ==2)
     {
-        fprintf(stderr,"Usage: %s <packet>\n",argv[0]);
-        return 1;
+        validate_packet(argv[1]);
+        return 0;
     }
-    validate_packet(argv[1]);
+    char* test_packet;
+    int num_of_elements = sizeof(packets)/sizeof(packets[0]);
+    for(int i=0;i<num_of_elements;i++)
+    {
+        test_packet = packets[i];
+        printf("[%d] ",i);
+        validate_packet(test_packet);
+    }
     return 0;
 }
