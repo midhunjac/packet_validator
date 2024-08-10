@@ -49,7 +49,7 @@ int validate_packet(char* packet)
     //compare the actual and expected wrapper checksums to check if packet is valid
     if(strcmp(wrapper_checksum_hex_expected,wrapper_checksum_actual) != 0)
     {
-        printf("Invalid packet: Wrapper checksum does not match.\n");
+        printf("Invalid packet: Incorrect wrapper checksum.\n");
         return 0;
     }
 
@@ -92,7 +92,7 @@ int validate_packet(char* packet)
 
         if(strcmp(chunk_checksum_hex_expected,chunk_checksum_actual) !=0 )
         {
-            printf("Invalid packet: Chunk checksum does not match.\n");
+            printf("Invalid packet: Incorrect chunk checksum.\n");
             return 0;
         } 
 
@@ -105,6 +105,7 @@ int validate_packet(char* packet)
     return 1;
 }
 
+#ifndef TESTING
 int main(int argc, char* argv[]) // command line argument fed input to help in quick testing
 {
 
@@ -123,3 +124,4 @@ int main(int argc, char* argv[]) // command line argument fed input to help in q
     }
     return 0;
 }
+#endif
