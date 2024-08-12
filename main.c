@@ -3,13 +3,25 @@
 #include <ctype.h>
 #include "packets.h"
 
-#define MIN_PACKET_LENGTH 4 //minimum packet length (type + subtype + wrapper checksum)
-#define PACKET_TYPE_POS 0 //the packet type is found at this index. refer protocol reference manual section 1.1
-#define PACKET_SUBTYPE_POS 1 //the packet subtype is found at this index. refer protocol reference manual section 1.1.1
-#define CHUNK_DATA_START_POS 2 // chunk data starts at this index. Refer protocol reference manual section 1.1.1
-#define CHUNK_DATA_SIZE 32  //the chunk of data can have a maximum of 32 characters. Refer to protocol referenc manual section 1.2
-#define CHUNK_CHECKSUM_SIZE 2 // the chunk checksum size is 2 character size. refer to protocol reference manual section 1.2
-#define PACKET_WRAPPER_CHECKSUM_LENGTH 2 //the packet wrapper checksum length is 2 characters. refer to protocol reference manual section 1.2
+//Status indicators
+#define PACKET_VALID                    0
+#define PACKET_INVALID                  -1
+
+//Packet specific macros
+#define MIN_PACKET_LENGTH               4   //minimum packet length (type + subtype + wrapper checksum)
+#define PACKET_TYPE_POS                 0   //the packet type is found at this index. refer protocol reference manual section 1.1
+#define PACKET_SUBTYPE_POS              1   //the packet subtype is found at this index. refer protocol reference manual section 1.1.1
+#define CHUNK_DATA_START_POS            2   // chunk data starts at this index. Refer protocol reference manual section 1.1.1
+#define CHUNK_DATA_SIZE                 32  //the chunk of data can have a maximum of 32 characters. Refer to protocol referenc manual section 1.2
+#define CHUNK_CHECKSUM_SIZE             2   // the chunk checksum size is 2 character size. refer to protocol reference manual section 1.2
+#define PACKET_WRAPPER_CHECKSUM_LENGTH  2   //the packet wrapper checksum length is 2 characters. refer to protocol reference manual section 1.2
+
+/**
+ * @brief validate_packet validates the incoming packets accroding to the conditions set out in the protocol reference manual
+ * @param packet the complete input packet to be validated
+ * @return integer value indicatin whether the packet is valid
+ * 
+ */
 
 int validate_packet(char* packet)
 {
@@ -18,7 +30,7 @@ int validate_packet(char* packet)
     if(length < MIN_PACKET_LENGTH)
     {
         printf("Invalid packet: Packet is too short.\n");
-        return 0;
+        return PACKET_INVALID;
     }
 
     //Extract the type and subtype of the incoming packet
@@ -29,12 +41,12 @@ int validate_packet(char* packet)
     if(!isprint(type))
     {
         printf("Invalid packet: Type is not a printable ASCII character.\n");
-        return 0;
+        return PACKET_INVALID;
     }
     if(!isprint(subtype))
     {
         printf("Invalid packet: Subtype is not a printable ASCII character.\n");
-        return 0;
+        return PACKET_INVALID;
     }
 
     //Calculate wrapper checksum on our end to compare it with the actual wrapper checksum
@@ -53,7 +65,7 @@ int validate_packet(char* packet)
     if(strcmp(wrapper_checksum_hex_expected,wrapper_checksum_actual) != 0)
     {
         printf("Invalid packet: Incorrect wrapper checksum.\n");
-        return 0;
+        return PACKET_INVALID;
     }
 
     //Check and validate data
@@ -61,7 +73,7 @@ int validate_packet(char* packet)
     if(length == MIN_PACKET_LENGTH) //if total length is 4, there is no data
     {
         printf("Valid packet. No data\n");
-        return 1;
+        return PACKET_VALID;
     }
 
     //In case there is more than one chunk, validate each chunk
@@ -81,7 +93,7 @@ int validate_packet(char* packet)
             if(!isprint(packet[i])) //checking validity of each character
             {
                 printf("Invalid packet: Non-printable ASCII character in chunk data.\n");
-                return 0;
+                return PACKET_INVALID;
             }
             chunk_char_sum += (int)packet[i]; //sum of all characters in the chunk accroding to PRM section 1.2
         }
@@ -98,7 +110,7 @@ int validate_packet(char* packet)
         if(strcmp(chunk_checksum_hex_expected,chunk_checksum_actual) !=0 )
         {
             printf("Invalid packet: Incorrect chunk checksum.\n");
-            return 0;
+            return PACKET_INVALID;
         } 
 
         chunk_start += (chunk_end - chunk_start) + CHUNK_CHECKSUM_SIZE; // move to the next chunk's beginning
@@ -107,7 +119,7 @@ int validate_packet(char* packet)
 
     //If every condition is met, this is a valid packet
     printf("Valid packet.\n");
-    return 1;
+    return PACKET_VALID;
 }
 
 #ifndef TESTING
